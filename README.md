@@ -30,6 +30,8 @@ nutrition_agent/
 ├── .env.example            ← Copy to .env and fill credentials
 ├── .gitignore
 ├── README.md
+├── render.yaml             ← Render.com deployment config
+├── Procfile                ← Gunicorn start command for production
 └── templates/
     └── index.html          ← Full frontend (Bootstrap + vanilla JS)
 ```
