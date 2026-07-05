@@ -1,0 +1,1551 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NutriBot — AI Nutrition Agent</title>
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ── CSS Variables ──────────────────────────────────────────────── */
+    :root {
+      --bg:         #f0f4f8;
+      --surface:    #ffffff;
+      --surface2:   #f7fafc;
+      --border:     #e2e8f0;
+      --text:       #1a202c;
+      --text-muted: #718096;
+      --primary:    #38a169;
+      --primary-dk: #276749;
+      --accent:     #3182ce;
+      --danger:     #e53e3e;
+      --warn:       #d69e2e;
+      --radius:     14px;
+      --shadow:     0 4px 24px rgba(0,0,0,0.08);
+      --chat-user:  #d4edda;
+      --chat-bot:   #ffffff;
+      --transition: 0.22s ease;
+    }
+    [data-theme="dark"] {
+      --bg:         #0f1117;
+      --surface:    #1a1d27;
+      --surface2:   #21263a;
+      --border:     #2d3748;
+      --text:       #e2e8f0;
+      --text-muted: #a0aec0;
+      --primary:    #48bb78;
+      --primary-dk: #38a169;
+      --accent:     #63b3ed;
+      --chat-user:  #1e4d2b;
+      --chat-bot:   #1a1d27;
+      --shadow:     0 4px 24px rgba(0,0,0,0.35);
+    }
+
+    /* ── Reset & Base ───────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      transition: background var(--transition), color var(--transition);
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── Scrollbar ──────────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 8px; }
+
+    /* ── Topbar ─────────────────────────────────────────────────────── */
+    .topbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.5rem;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      box-shadow: var(--shadow);
+    }
+    .topbar-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 1.2rem;
+      color: var(--primary);
+    }
+    .topbar-brand .logo-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dk));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-size: 1.1rem;
+    }
+    .topbar-actions { display: flex; align-items: center; gap: 8px; }
+    .btn-icon {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      width: 36px; height: 36px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+    .btn-icon:hover { background: var(--surface2); color: var(--primary); border-color: var(--primary); }
+
+    /* ── Sidebar ─────────────────────────────────────────────────────── */
+    .sidebar {
+      width: 240px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      height: calc(100vh - 60px);
+      position: fixed;
+      top: 60px; left: 0;
+      overflow-y: auto;
+      transition: transform var(--transition);
+      z-index: 900;
+      padding: 1rem 0;
+    }
+    .sidebar.collapsed { transform: translateX(-240px); }
+    .nav-section-title {
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding: 0.5rem 1.2rem 0.25rem;
+    }
+    .nav-item-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 0.55rem 1.2rem;
+      background: none;
+      border: none;
+      border-left: 3px solid transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all var(--transition);
+      text-align: left;
+    }
+    .nav-item-btn:hover { background: var(--surface2); color: var(--text); }
+    .nav-item-btn.active {
+      color: var(--primary);
+      background: color-mix(in srgb, var(--primary) 10%, transparent);
+      border-left-color: var(--primary);
+      font-weight: 600;
+    }
+    .nav-item-btn i { font-size: 1rem; width: 20px; text-align: center; }
+
+    /* ── Main Content ────────────────────────────────────────────────── */
+    .main-content {
+      margin-left: 240px;
+      padding: 1.5rem;
+      min-height: calc(100vh - 60px);
+      transition: margin-left var(--transition);
+    }
+    .main-content.expanded { margin-left: 0; }
+
+    /* ── Section Pages ───────────────────────────────────────────────── */
+    .page-section { display: none; animation: fadeIn 0.3s ease; }
+    .page-section.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ── Cards ───────────────────────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .card-header-custom {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dk));
+      color: white;
+      padding: 1rem 1.25rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-body-custom { padding: 1.25rem; }
+
+    /* ── Stat Cards ──────────────────────────────────────────────────── */
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      text-align: center;
+      box-shadow: var(--shadow);
+      transition: transform var(--transition);
+    }
+    .stat-card:hover { transform: translateY(-3px); }
+    .stat-icon {
+      width: 52px; height: 52px;
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem;
+      margin: 0 auto 0.75rem;
+    }
+    .stat-value { font-size: 1.8rem; font-weight: 700; line-height: 1; }
+    .stat-label { font-size: 0.78rem; color: var(--text-muted); margin-top: 4px; }
+
+    /* ── Chat UI ─────────────────────────────────────────────────────── */
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 140px);
+      max-height: 780px;
+    }
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .chat-bubble {
+      max-width: 78%;
+      padding: 0.8rem 1.1rem;
+      border-radius: 18px;
+      font-size: 0.92rem;
+      line-height: 1.6;
+      animation: bubbleIn 0.25s ease;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    @keyframes bubbleIn {
+      from { opacity: 0; transform: scale(0.92); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    .chat-bubble.user {
+      background: var(--chat-user);
+      color: var(--text);
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+    .chat-bubble.bot {
+      background: var(--chat-bot);
+      border: 1px solid var(--border);
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+    }
+    .chat-bubble.bot .bubble-sender {
+      font-weight: 600;
+      font-size: 0.78rem;
+      color: var(--primary);
+      margin-bottom: 4px;
+    }
+    .chat-bubble.error { background: #fff5f5; border-color: var(--danger); color: var(--danger); }
+    .typing-indicator {
+      display: flex; gap: 5px; align-items: center;
+      padding: 0.8rem 1.1rem;
+      background: var(--chat-bot);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      border-bottom-left-radius: 4px;
+      align-self: flex-start;
+      max-width: 80px;
+    }
+    .typing-dot {
+      width: 8px; height: 8px;
+      background: var(--text-muted);
+      border-radius: 50%;
+      animation: typingBounce 1.2s infinite;
+    }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typingBounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30%            { transform: translateY(-6px); }
+    }
+    .chat-input-area {
+      padding: 0.75rem;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      border-radius: 0 0 var(--radius) var(--radius);
+    }
+    .chat-input-row { display: flex; gap: 8px; align-items: flex-end; }
+    .chat-textarea {
+      flex: 1;
+      resize: none;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0.6rem 0.9rem;
+      font-size: 0.92rem;
+      background: var(--surface2);
+      color: var(--text);
+      max-height: 120px;
+      min-height: 42px;
+      outline: none;
+      font-family: inherit;
+      transition: border-color var(--transition);
+    }
+    .chat-textarea:focus { border-color: var(--primary); }
+    .btn-send {
+      width: 42px; height: 42px;
+      background: var(--primary);
+      border: none;
+      border-radius: 12px;
+      color: white;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      font-size: 1rem;
+      flex-shrink: 0;
+      transition: background var(--transition), transform var(--transition);
+    }
+    .btn-send:hover { background: var(--primary-dk); transform: scale(1.05); }
+    .btn-send:disabled { background: var(--border); cursor: not-allowed; transform: none; }
+    .quick-prompts { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+    .quick-chip {
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: var(--surface2);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+    .quick-chip:hover { border-color: var(--primary); color: var(--primary); background: color-mix(in srgb, var(--primary) 8%, transparent); }
+
+    /* ── Forms ───────────────────────────────────────────────────────── */
+    .form-label-custom {
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+    .form-control, .form-select {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 10px;
+      font-size: 0.9rem;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    .form-control:focus, .form-select:focus {
+      background: var(--surface2);
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent);
+      color: var(--text);
+    }
+
+    /* ── Primary Button ──────────────────────────────────────────────── */
+    .btn-primary-custom {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dk));
+      border: none;
+      color: white;
+      border-radius: 10px;
+      padding: 0.55rem 1.4rem;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: opacity var(--transition), transform var(--transition);
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .btn-primary-custom:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-primary-custom:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+    .btn-outline-custom {
+      background: none;
+      border: 1px solid var(--primary);
+      color: var(--primary);
+      border-radius: 10px;
+      padding: 0.5rem 1.2rem;
+      font-weight: 500;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+    .btn-outline-custom:hover { background: var(--primary); color: white; }
+
+    /* ── BMI Gauge ───────────────────────────────────────────────────── */
+    .bmi-gauge-wrap { position: relative; text-align: center; padding: 1rem 0; }
+    .bmi-value-display {
+      font-size: 3rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .bmi-bar-track {
+      height: 16px;
+      border-radius: 8px;
+      background: linear-gradient(to right, #63b3ed 0%, #48bb78 25%, #ecc94b 55%, #ed8936 75%, #e53e3e 100%);
+      position: relative;
+      margin: 0.75rem 0 0.25rem;
+    }
+    .bmi-needle {
+      position: absolute;
+      top: -6px;
+      width: 4px; height: 28px;
+      background: var(--text);
+      border-radius: 2px;
+      transform: translateX(-50%);
+      transition: left 0.6s cubic-bezier(.34,1.56,.64,1);
+    }
+    .bmi-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.68rem;
+      color: var(--text-muted);
+    }
+
+    /* ── Result Box ──────────────────────────────────────────────────── */
+    .result-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      white-space: pre-wrap;
+      font-size: 0.88rem;
+      line-height: 1.7;
+      max-height: 480px;
+      overflow-y: auto;
+    }
+    .result-box.loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: var(--text-muted);
+      min-height: 100px;
+    }
+
+    /* ── Family Member Card ──────────────────────────────────────────── */
+    .member-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+      animation: fadeIn 0.25s ease;
+    }
+    .member-avatar {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      display: flex; align-items: center; justify-content: center;
+      color: white;
+      font-weight: 700;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+    .member-info { flex: 1; min-width: 0; }
+    .member-name { font-weight: 600; font-size: 0.9rem; }
+    .member-meta { font-size: 0.77rem; color: var(--text-muted); }
+
+    /* ── Dashboard Macro Ring ────────────────────────────────────────── */
+    .macro-ring-wrap { display: flex; justify-content: center; padding: 0.5rem; }
+    svg.macro-ring { overflow: visible; }
+
+    /* ── Toast ───────────────────────────────────────────────────────── */
+    .toast-container { position: fixed; bottom: 1.2rem; right: 1.2rem; z-index: 9999; }
+    .toast-msg {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.7rem 1.1rem;
+      box-shadow: var(--shadow);
+      font-size: 0.88rem;
+      display: flex; align-items: center; gap: 8px;
+      animation: slideUp 0.3s ease;
+      min-width: 220px;
+    }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+    .toast-msg.success { border-left: 4px solid var(--primary); }
+    .toast-msg.error   { border-left: 4px solid var(--danger); }
+
+    /* ── Responsive ──────────────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-240px); }
+      .sidebar.mobile-open { transform: translateX(0); }
+      .main-content { margin-left: 0; padding: 1rem; }
+      .chat-container { height: calc(100vh - 160px); }
+      .stat-card .stat-value { font-size: 1.4rem; }
+      .chat-bubble { max-width: 90%; }
+    }
+
+    /* ── Page Header ─────────────────────────────────────────────────── */
+    .page-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 0.2rem;
+    }
+    .page-subtitle { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem; }
+
+    /* ── Badge ───────────────────────────────────────────────────────── */
+    .badge-custom {
+      font-size: 0.7rem;
+      padding: 3px 8px;
+      border-radius: 20px;
+      font-weight: 600;
+      background: color-mix(in srgb, var(--primary) 15%, transparent);
+      color: var(--primary);
+    }
+
+    /* ── Overlay for mobile sidebar ──────────────────────────────────── */
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 850;
+    }
+    .sidebar-overlay.active { display: block; }
+  </style>
+</head>
+<body>
+
+<!-- ── Topbar ─────────────────────────────────────────────────────────────── -->
+<header class="topbar">
+  <div class="topbar-brand">
+    <button class="btn-icon" id="sidebarToggle" aria-label="Toggle menu"><i class="bi bi-list"></i></button>
+    <div class="logo-icon"><i class="bi bi-heart-pulse-fill"></i></div>
+    <span>NutriBot</span>
+    <span class="badge-custom ms-1">AI</span>
+  </div>
+  <div class="topbar-actions">
+    <button class="btn-icon" id="darkModeToggle" title="Toggle dark mode"><i class="bi bi-moon-stars"></i></button>
+    <button class="btn-icon" id="profileToggle" title="My Profile"><i class="bi bi-person-circle"></i></button>
+  </div>
+</header>
+
+<!-- ── Sidebar Overlay (mobile) ──────────────────────────────────────────── -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- ── Sidebar ───────────────────────────────────────────────────────────── -->
+<nav class="sidebar" id="sidebar">
+  <div class="nav-section-title">Main</div>
+  <button class="nav-item-btn active" data-page="dashboard"><i class="bi bi-grid-1x2"></i> Dashboard</button>
+  <button class="nav-item-btn" data-page="chat"><i class="bi bi-chat-dots"></i> AI Chat</button>
+
+  <div class="nav-section-title mt-2">Tools</div>
+  <button class="nav-item-btn" data-page="nutrition"><i class="bi bi-calendar2-week"></i> Meal Planner</button>
+  <button class="nav-item-btn" data-page="calorie"><i class="bi bi-calculator"></i> Calorie Analyser</button>
+  <button class="nav-item-btn" data-page="bmi"><i class="bi bi-activity"></i> BMI & TDEE</button>
+  <button class="nav-item-btn" data-page="meals"><i class="bi bi-egg-fried"></i> Meal Ideas</button>
+
+  <div class="nav-section-title mt-2">Family</div>
+  <button class="nav-item-btn" data-page="family"><i class="bi bi-people"></i> Family Plan</button>
+  <button class="nav-item-btn" data-page="profile"><i class="bi bi-person-gear"></i> My Profile</button>
+</nav>
+
+<!-- ── Main Content ───────────────────────────────────────────────────────── -->
+<main class="main-content" id="mainContent">
+
+  <!-- ════════════════════════════════════════════════════════
+       DASHBOARD
+  ════════════════════════════════════════════════════════ -->
+  <section class="page-section active" id="page-dashboard">
+    <div class="page-title">Welcome back 👋</div>
+    <div class="page-subtitle">Your personalised AI nutrition companion powered by IBM Watsonx.ai</div>
+
+    <!-- Stat Cards -->
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-md-3">
+        <div class="stat-card">
+          <div class="stat-icon" style="background:color-mix(in srgb,var(--primary) 15%,transparent);color:var(--primary)"><i class="bi bi-fire"></i></div>
+          <div class="stat-value" id="dash-calories">—</div>
+          <div class="stat-label">Daily Calories (TDEE)</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card">
+          <div class="stat-icon" style="background:color-mix(in srgb,var(--accent) 15%,transparent);color:var(--accent)"><i class="bi bi-droplet-half"></i></div>
+          <div class="stat-value" id="dash-water">2.5 L</div>
+          <div class="stat-label">Water Goal</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card">
+          <div class="stat-icon" style="background:color-mix(in srgb,var(--warn) 20%,transparent);color:var(--warn)"><i class="bi bi-speedometer2"></i></div>
+          <div class="stat-value" id="dash-bmi">—</div>
+          <div class="stat-label">BMI</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card">
+          <div class="stat-icon" style="background:color-mix(in srgb,var(--danger) 12%,transparent);color:var(--danger)"><i class="bi bi-heart"></i></div>
+          <div class="stat-value" id="dash-goal">—</div>
+          <div class="stat-label">Goal</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row g-3 mb-4">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header-custom"><i class="bi bi-lightning-charge"></i> Quick Actions</div>
+          <div class="card-body-custom">
+            <div class="d-flex flex-wrap gap-2">
+              <button class="btn-primary-custom" onclick="navigate('chat')"><i class="bi bi-chat-dots"></i> Ask NutriBot</button>
+              <button class="btn-outline-custom" onclick="navigate('nutrition')"><i class="bi bi-calendar2-week"></i> Generate Meal Plan</button>
+              <button class="btn-outline-custom" onclick="navigate('bmi')"><i class="bi bi-activity"></i> Calculate BMI</button>
+              <button class="btn-outline-custom" onclick="navigate('meals')"><i class="bi bi-egg-fried"></i> Meal Ideas</button>
+              <button class="btn-outline-custom" onclick="navigate('family')"><i class="bi bi-people"></i> Family Plan</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Macro Summary + Tips -->
+    <div class="row g-3">
+      <div class="col-md-5">
+        <div class="card h-100">
+          <div class="card-header-custom"><i class="bi bi-pie-chart"></i> Macro Targets</div>
+          <div class="card-body-custom">
+            <div class="macro-ring-wrap">
+              <svg class="macro-ring" width="180" height="180" viewBox="0 0 180 180">
+                <circle cx="90" cy="90" r="70" fill="none" stroke="var(--border)" stroke-width="20"/>
+                <!-- Carbs 50% -->
+                <circle cx="90" cy="90" r="70" fill="none" stroke="#63b3ed" stroke-width="20"
+                  stroke-dasharray="220 439" stroke-dashoffset="0" stroke-linecap="round"
+                  transform="rotate(-90 90 90)"/>
+                <!-- Protein 25% -->
+                <circle cx="90" cy="90" r="70" fill="none" stroke="#48bb78" stroke-width="20"
+                  stroke-dasharray="110 549" stroke-dashoffset="-220" stroke-linecap="round"
+                  transform="rotate(-90 90 90)"/>
+                <!-- Fat 25% -->
+                <circle cx="90" cy="90" r="70" fill="none" stroke="#ed8936" stroke-width="20"
+                  stroke-dasharray="110 549" stroke-dashoffset="-330" stroke-linecap="round"
+                  transform="rotate(-90 90 90)"/>
+                <text x="90" y="85" text-anchor="middle" font-size="13" fill="var(--text-muted)" font-family="Inter,sans-serif">Macro</text>
+                <text x="90" y="103" text-anchor="middle" font-size="13" fill="var(--text-muted)" font-family="Inter,sans-serif">Split</text>
+              </svg>
+            </div>
+            <div class="d-flex justify-content-center gap-3 mt-1" style="font-size:0.8rem">
+              <span><span style="color:#63b3ed">●</span> Carbs 50%</span>
+              <span><span style="color:#48bb78">●</span> Protein 25%</span>
+              <span><span style="color:#ed8936">●</span> Fat 25%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-7">
+        <div class="card h-100">
+          <div class="card-header-custom"><i class="bi bi-lightbulb"></i> Today's Nutrition Tips</div>
+          <div class="card-body-custom">
+            <ul class="list-unstyled mb-0" style="font-size:0.88rem;line-height:2" id="tips-list">
+              <li>🥗 Start your day with a protein-rich breakfast like eggs or paneer</li>
+              <li>💧 Drink at least 8–10 glasses of water throughout the day</li>
+              <li>🌾 Choose whole grains — brown rice, whole wheat roti over refined</li>
+              <li>🍎 Include 2–3 servings of fresh fruits and vegetables</li>
+              <li>⏰ Eat every 3–4 hours to keep metabolism steady</li>
+              <li>🧘 Combine mindful eating with 30 min of daily physical activity</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════
+       AI CHAT
+  ════════════════════════════════════════════════════════ -->
+  <section class="page-section" id="page-chat">
+    <div class="page-title">AI Chat</div>
+    <div class="page-subtitle">Ask NutriBot anything about nutrition, diet, recipes, or health</div>
+    <div class="card chat-container">
+      <div class="chat-messages" id="chatMessages">
+        <div class="chat-bubble bot">
+          <div class="bubble-sender">🥦 NutriBot</div>
+          Namaste! 🙏 I'm NutriBot, your AI-powered nutrition companion built on IBM Watsonx.ai Granite.
+
+I can help you with:
+• 🍽️ Personalised meal plans
+• 🔢 Calorie &amp; macro analysis
+• 🥗 Healthy Indian &amp; global recipes
+• 👨‍👩‍👧 Family diet recommendations
+• 💪 Weight management guidance
+
+How can I help you today?
+        </div>
+      </div>
+      <div class="chat-input-area">
+        <div class="quick-prompts" id="quickPrompts">
+          <span class="quick-chip" onclick="sendQuick(this)">What should I eat for breakfast?</span>
+          <span class="quick-chip" onclick="sendQuick(this)">High protein vegetarian meals</span>
+          <span class="quick-chip" onclick="sendQuick(this)">Indian diet for diabetes</span>
+          <span class="quick-chip" onclick="sendQuick(this)">Healthy dinner under 500 kcal</span>
+          <span class="quick-chip" onclick="sendQuick(this)">Foods rich in iron</span>
+        </div>
+        <div class="chat-input-row">
+          <textarea class="chat-textarea" id="chatInput" rows="1"
+            placeholder="Type a message… (Enter to send, Shift+Enter for newline)"></textarea>
+          <button class="btn-send" id="sendBtn" onclick="sendMessage()">
+            <i class="bi bi-send-fill"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════
+       MEAL PLANNER
+  ════════════════════════════════════════════════════════ -->
+  <section class="page-section" id="page-nutrition">
+    <div class="page-title">7-Day Meal Planner</div>
+    <div class="page-subtitle">Generate a personalised weekly nutrition plan using AI</div>
+    <div class="row g-3">
+      <div class="col-lg-5">
+        <div class="card">
+          <div class="card-header-custom"><i class="bi bi-person-lines-fill"></i> Your Details</div>
+          <div class="card-body-custom">
+            <div class="row g-3">
+              <div class="col-6">
+                <label class="form-label-custom">Name</label>
+                <input class="form-control" id="np-name" placeholder="Your name" />
+              </div>
+              <div class="col-6">
+                <label class="form-label-custom">Age</label>
+                <input class="form-control" id="np-age" type="number" placeholder="Years" />
+              </div>
+              <div class="col-6">
+                <label class="form-label-custom">Weight (kg)</label>
+                <input class="form-control" id="np-weight" type="number" placeholder="kg" />
+              </div>
+              <div class="col-6">
+                <label class="form-label-custom">Height (cm)</label>
+                <input class="form-control" id="np-height" type="number" placeholder="cm" />
+              </div>
+              <div class="col-12">
+                <label class="form-label-custom">Goal</label>
+                <select class="form-select" id="np-goal">
+                  <option value="lose weight">Lose Weight</option>
+                  <option value="maintain weight" selected>Maintain Weight</option>
+                  <option value="gain muscle">Gain Muscle</option>
+                  <option value="manage diabetes">Manage Diabetes</option>
+                  <option value="heart health">Heart Health</option>
+                  <option value="improve energy">Improve Energy</option>
+                </select>
+              </div>
+              <div class="col-12">
+                <label class="form-label-custom">Diet Preference</label>
+                <select class="form-select" id="np-diet">
+                  <option value="balanced">Balanced</option>
+                  <option value="vegetarian">Vegetarian</option>
+                  <option value="vegan">Vegan</option>
+                  <option value="keto">Keto</option>
+                  <option value="ayurvedic">Ayurvedic</option>
+                </select>
+              </div>
+              <div class="col-12">
+                <label class="form-label-custom">Health Conditions (optional)</label>
+                <input class="form-control" id="np-conditions" placeholder="e.g. diabetes, PCOS, hypertension" />
+              </div>
+              <div class="col-12">
+                <label class="form-label-custom">Allergies / Intolerances (optional)</label>
+                <input class="form-control" id="np-allergies" placeholder="e.g. lactose, gluten, peanuts" />
+              </div>
+              <div class="col-12">
+                <button class="btn-primary-custom w-100" id="np-btn" onclick="generateNutritionPlan()">
+                  <i class="bi bi-magic"></i> Generate 7-Day Plan
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-7">
+        <div class="card h-100">
+          <div class="card-header-custom"><i class="bi bi-journal-text"></i> Your Plan</div>
+          <div class="card-body-custom">
+            <div class="result-box" id="np-result" style="min-height:300px">
+              <span style="color:var(--text-muted)">Fill in your details and click "Generate 7-Day Plan" to get a personalised nutrition plan.</span>
+            </div>
+            <div class="mt-2 d-flex gap-2" id="np-actions" style="display:none!important">
+              <button class="btn-outline-custom" onclick="copyResult('np-result')"><i class="bi bi-clipboard"></i> Copy</button>
+              <button class="btn-outline-custom" onclick="askFollowUp('np-result')"><i class="bi bi-chat"></i> Ask Follow-up</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════
+       CALORIE ANALYSER
+  ════════════════════════════════════════════════════════ -->
+  <section class="page-section" id="page-calorie">
+    <div class="page-title">Calorie Analyser</div>
+    <div class="page-subtitle">Analyse any food or meal for calories, macros, and nutrition score</div>
+    <div class="row g-3">
+      <div class="col-lg-5">
+        <div class="card">
+          <div class="card-header-custom"><i class="bi bi-calculator"></i> Enter Foods</div>
+          <div class="card-body-custom">
+            <label class="form-label-custom">Food / Meal Description</label>
+            <textarea class="form-control mb-3" id="ca-foods" rows="6"
+              placeholder="e.g. 2 rotis with dal, 1 katori rajma, glass of lassi, 1 banana"></textarea>
+            <div class="d-flex flex-wrap gap-2 mb-3">
+              <span class="quick-chip" onclick="setFoodExample(this)">Dal rice + sabzi</span>
+              <span class="quick-chip" onclick="setFoodExample(this)">Idli sambar 3 pieces</span>
+              <span class="quick-chip" onclick="setFoodExample(this)">Poha + chai</span>
+              <span class="quick-chip" onclick="setFoodExample(this)">Chicken biryani 1 plate</span>
+              <span class="quick-chip" onclick="setFoodExample(this)">Masala dosa</span>
+            </div>
+            <button class="btn-primary-custom w-100" id="ca-btn" onclick="analyseCalories()">
+              <i class="bi bi-search"></i> Analyse Nutrition
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-7">
+        <div class="card h-100">
+          <div class="card-header-custom"><i class="bi bi-bar-chart"></i> Analysis Result</div>
+          <div class="card-body-custom">
+            <div class="result-box" id="ca-result" style="min-height:280px">
+              <span style="color:var(--text-muted)">Enter a meal description above and click Analyse.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════
+       BMI & TDEE
+  ════════════════════════════════════════════════════════ -->
+  <section class="page-section" id="page-bmi">
+    <div class="page-title">BMI &amp; TDEE Calculator</div>
+    <div class="page-subtitle">Know your Body Mass Index and daily calorie needs</div>
+    <div class="row g-3">
+      <div class="col-md-5">
+        <div class="card">
+          <div class="card-header-custom"><i class="bi bi-person-check"></i> Your Measurements</div>
+          <div class="card-body-custom">
+            <div class="row g-3">
+              <div class="col-6">
+                <label class="form-label-custom">Weight (kg)</label>
+                <input class="form-control" id="bmi-weight" type="number" placeholder="70" />
+              </div>
+              <div class="col-6">
+                <label class="form-label-custom">Height (cm)</label>
+                <input class="form-control" id="bmi-height" type="number" placeholder="170" />
+              </div>
+              <div class="col-6">
+                <label class="form-label-custom">Age</label>
+                <input class="form-control" id="bmi-age" type="number" placeholder="30" />
+              </div>
+              <div class="col-6">
+                <label class="form-label-custom">Gender</label>
+                <select class="form-select" id="bmi-gender">
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                </select>
+              </div>
+              <div class="col-12">
+                <label class="form-label-custom">Activity Level</label>
+                <select class="form-select" id="bmi-activity">
+                  <option value="sedentary">Sedentary (desk job, no exercise)</option>
+                  <option value="light">Light (1–3 days/week)</option>
+                  <option value="moderate" selected>Moderate (3–5 days/week)</option>
+                  <option value="active">Active (6–7 days/week)</option>
+                  <option value="very_active">Very Active (athlete / hard labour)</option>
+                </select>
+              </div>
+              <div class="col-12">
+                <button class="btn-primary-custom w-100" onclick="calculateBMITDEE()">
+                  <i class="bi bi-activity"></i> Calculate
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-7">
+        <div class="card mb-3">
+          <div class="card-header-custom"><i class="bi bi-speedometer2"></i> BMI Result</div>
+          <div class="card-body-custom">
+            <div class="bmi-gauge-wrap">
+              <div class="bmi-value-display" id="bmi-value">—</div>
+              <div style="font-size:0.9rem;color:var(--text-muted);margin:4px 0" id="bmi-category"></div>
+              <div class="bmi-bar-track"><div class="bmi-needle" id="bmi-needle" style="left:50%"></div></div>
+              <div class="bmi-labels">
+                <span>Underweight<br/>&lt;18.5</span>
+                <span>Normal<br/>18.5–25</span>
+                <span>Overweight<br/>25–30</span>
+                <span>Obese<br/>&gt;30</span>
+              </div>
+              <p class="mt-3 mb-0" style="font-size:0.85rem;color:var(--text-muted)" id="bmi-advice"></p>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header-custom"><i class="bi bi-fire"></i> Daily Calorie Needs (TDEE)</div>
+          <div class="card-body-custom">
+            <div class="row g-2 text-center" id="tdee-cards">
+              <div class="col-4">
+                <div style="background:var(--surface2);border-radius:10px;padding:0.75rem;border:1px solid var(--border)">
+                  <div style="font-size:1.4rem;font-weight:700;color:var(--accent)" id="tdee-maintain">—</div>
+                  <div style="font-size:0.72rem;color:var(--text-muted)">Maintain</div>
+                </div>
+              </div>
+              <div class="col-4">
+                <div style="background:var(--surface2);border-radius:10px;padding:0.75rem;border:1px solid var(--border)">
+                  <div style="font-size:1.4rem;font-weight:700;color:var(--primary)" id="tdee-loss">—</div>
+                  <div style="font-size:0.72rem;color:var(--text-muted)">Lose Weight</div>
+                </div>
+              </div>
+              <div class="col-4">
+                <div style="background:var(--surface2);border-radius:10px;padding:0.75rem;border:1px solid var(--border)">
+                  <div style="font-size:1.4rem;font-weight:700;color:var(--warn)" id="tdee-gain">—</div>
+                  <div style="font-size:0.72rem;color:var(--text-muted)">Gain Muscle</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════
+       MEAL IDEAS
+  ════════════════════════════════════════════════════════ -->
+  <section class="page-section" id="page-meals">
+    <div class="page-title">Meal Ideas</div>
+    <div class="page-subtitle">Get AI-powered meal suggestions based on preferences or ingredients</div>
+    <div class="row g-3">
+      <div class="col-lg-5">
+        <div class="card">
+          <div class="card-header-custom"><i class="bi bi-egg-fried"></i> Preferences</div>
+          <div class="card-body-custom">
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label-custom">Meal Type</label>
+                <select class="form-select" id="mi-type">
+                  <option value="breakfast">Breakfast</option>
+                  <option value="lunch" selected>Lunch</option>
+                  <option value="dinner">Dinner</option>
+                  <option value="snack">Snack</option>
+                  <option value="post-workout meal">Post-Workout</option>
+                </select>
+              </div>
+              <div class="col-12">
+                <label class="form-label-custom">Ingredients on Hand (optional)</label>
+                <input class="form-control" id="mi-ingredients"
+                  placeholder="e.g. paneer, spinach, tomatoes, rice" />
+              </div>
+              <div class="col-12">
+                <label class="form-label-custom">Dietary Preference (optional)</label>
+                <input class="form-control" id="mi-prefs"
+                  placeholder="e.g. low-carb, high-protein, no onion garlic" />
+              </div>
+              <div class="col-12">
+                <button class="btn-primary-custom w-100" id="mi-btn" onclick="getMealIdeas()">
+                  <i class="bi bi-stars"></i> Get Meal Ideas
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-7">
+        <div class="card h-100">
+          <div class="card-header-custom"><i class="bi bi-journal-richtext"></i> Suggestions</div>
+          <div class="card-body-custom">
+            <div class="result-box" id="mi-result" style="min-height:280px">
+              <span style="color:var(--text-muted)">Select meal type and click "Get Meal Ideas".</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════
+       FAMILY PLAN
+  ════════════════════════════════════════════════════════ -->
+  <section class="page-section" id="page-family">
+    <div class="page-title">Family Nutrition Plan</div>
+    <div class="page-subtitle">Create a unified diet plan tailored for each family member</div>
+    <div class="row g-3">
+      <div class="col-lg-5">
+        <div class="card">
+          <div class="card-header-custom"><i class="bi bi-people"></i> Family Members</div>
+          <div class="card-body-custom">
+            <div id="membersList"></div>
+            <div class="row g-2 mb-3" id="memberForm">
+              <div class="col-6">
+                <label class="form-label-custom">Name</label>
+                <input class="form-control" id="fm-name" placeholder="Member name" />
+              </div>
+              <div class="col-6">
+                <label class="form-label-custom">Age</label>
+                <input class="form-control" id="fm-age" type="number" placeholder="Age" />
+              </div>
+              <div class="col-12">
+                <label class="form-label-custom">Goal</label>
+                <select class="form-select" id="fm-goal">
+                  <option value="healthy eating">Healthy Eating</option>
+                  <option value="lose weight">Lose Weight</option>
+                  <option value="gain weight">Gain Weight</option>
+                  <option value="manage diabetes">Manage Diabetes</option>
+                  <option value="heart health">Heart Health</option>
+                  <option value="child nutrition">Child Nutrition</option>
+                  <option value="senior nutrition">Senior Nutrition</option>
+                </select>
+              </div>
+              <div class="col-12">
+                <label class="form-label-custom">Health Conditions</label>
+                <input class="form-control" id="fm-conditions" placeholder="none" />
+              </div>
+              <div class="col-12">
+                <button class="btn-outline-custom w-100" onclick="addMember()">
+                  <i class="bi bi-person-plus"></i> Add Member
+                </button>
+              </div>
+            </div>
+            <button class="btn-primary-custom w-100" id="fam-btn" onclick="generateFamilyPlan()">
+              <i class="bi bi-magic"></i> Generate Family Plan
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-7">
+        <div class="card h-100">
+          <div class="card-header-custom"><i class="bi bi-journal-text"></i> Family Plan</div>
+          <div class="card-body-custom">
+            <div class="result-box" id="fam-result" style="min-height:320px">
+              <span style="color:var(--text-muted)">Add family members and click "Generate Family Plan".</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════
+       MY PROFILE
+  ════════════════════════════════════════════════════════ -->
+  <section class="page-section" id="page-profile">
+    <div class="page-title">My Profile</div>
+    <div class="page-subtitle">Your details are used to personalise all AI responses</div>
+    <div class="row g-3">
+      <div class="col-lg-6">
+        <div class="card">
+          <div class="card-header-custom"><i class="bi bi-person-gear"></i> Personal Details</div>
+          <div class="card-body-custom">
+            <div class="row g-3">
+              <div class="col-6">
+                <label class="form-label-custom">Name</label>
+                <input class="form-control" id="prof-name" placeholder="Your name" />
+              </div>
+              <div class="col-6">
+                <label class="form-label-custom">Age</label>
+                <input class="form-control" id="prof-age" type="number" placeholder="Years" />
+              </div>
+              <div class="col-6">
+                <label class="form-label-custom">Weight (kg)</label>
+                <input class="form-control" id="prof-weight" type="number" placeholder="kg" />
+              </div>
+              <div class="col-6">
+                <label class="form-label-custom">Height (cm)</label>
+                <input class="form-control" id="prof-height" type="number" placeholder="cm" />
+              </div>
+              <div class="col-6">
+                <label class="form-label-custom">Gender</label>
+                <select class="form-select" id="prof-gender">
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div class="col-6">
+                <label class="form-label-custom">Goal</label>
+                <select class="form-select" id="prof-goal">
+                  <option value="lose weight">Lose Weight</option>
+                  <option value="maintain weight" selected>Maintain Weight</option>
+                  <option value="gain muscle">Gain Muscle</option>
+                  <option value="manage diabetes">Manage Diabetes</option>
+                  <option value="heart health">Heart Health</option>
+                </select>
+              </div>
+              <div class="col-12">
+                <label class="form-label-custom">Health Conditions</label>
+                <input class="form-control" id="prof-conditions" placeholder="e.g. diabetes, thyroid" />
+              </div>
+              <div class="col-12">
+                <label class="form-label-custom">Allergies / Intolerances</label>
+                <input class="form-control" id="prof-allergies" placeholder="e.g. lactose, gluten" />
+              </div>
+              <div class="col-12">
+                <button class="btn-primary-custom w-100" onclick="saveProfile()">
+                  <i class="bi bi-check-circle"></i> Save Profile
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="card">
+          <div class="card-header-custom"><i class="bi bi-shield-check"></i> Profile Summary</div>
+          <div class="card-body-custom" id="profileSummary">
+            <p style="color:var(--text-muted);font-size:0.88rem">
+              Fill in your details and save your profile. NutriBot will use this context to give more personalised advice.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ── Toast Container ─────────────────────────────────────────────────────── -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════════
+   NutriBot Frontend — main.js (inline)
+══════════════════════════════════════════════════════════════════════════ */
+
+/* ── State ──────────────────────────────────────────────────────────────── */
+let chatHistory = [];
+let familyMembers = [];
+let userProfile = JSON.parse(localStorage.getItem('nutribot_profile') || '{}');
+
+/* ── Dark Mode ──────────────────────────────────────────────────────────── */
+const html = document.documentElement;
+const darkBtn = document.getElementById('darkModeToggle');
+
+function applyTheme(dark) {
+  html.setAttribute('data-theme', dark ? 'dark' : 'light');
+  darkBtn.innerHTML = dark ? '<i class="bi bi-sun"></i>' : '<i class="bi bi-moon-stars"></i>';
+  localStorage.setItem('nutribot_dark', dark);
+}
+
+const savedDark = localStorage.getItem('nutribot_dark') === 'true';
+applyTheme(savedDark);
+darkBtn.addEventListener('click', () => applyTheme(html.dataset.theme !== 'dark'));
+
+/* ── Sidebar ────────────────────────────────────────────────────────────── */
+const sidebar         = document.getElementById('sidebar');
+const mainContent     = document.getElementById('mainContent');
+const sidebarOverlay  = document.getElementById('sidebarOverlay');
+let sidebarCollapsed  = false;
+
+document.getElementById('sidebarToggle').addEventListener('click', () => {
+  const isMobile = window.innerWidth <= 768;
+  if (isMobile) {
+    sidebar.classList.toggle('mobile-open');
+    sidebarOverlay.classList.toggle('active');
+  } else {
+    sidebarCollapsed = !sidebarCollapsed;
+    sidebar.classList.toggle('collapsed', sidebarCollapsed);
+    mainContent.classList.toggle('expanded', sidebarCollapsed);
+  }
+});
+sidebarOverlay.addEventListener('click', () => {
+  sidebar.classList.remove('mobile-open');
+  sidebarOverlay.classList.remove('active');
+});
+
+/* ── Navigation ─────────────────────────────────────────────────────────── */
+function navigate(page) {
+  document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.querySelector(`.nav-item-btn[data-page="${page}"]`).classList.add('active');
+  if (window.innerWidth <= 768) {
+    sidebar.classList.remove('mobile-open');
+    sidebarOverlay.classList.remove('active');
+  }
+}
+
+document.querySelectorAll('.nav-item-btn').forEach(btn => {
+  btn.addEventListener('click', () => navigate(btn.dataset.page));
+});
+
+document.getElementById('profileToggle').addEventListener('click', () => navigate('profile'));
+
+/* ── Toast ──────────────────────────────────────────────────────────────── */
+function showToast(msg, type = 'success') {
+  const icon = type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill';
+  const color = type === 'success' ? 'var(--primary)' : 'var(--danger)';
+  const el = document.createElement('div');
+  el.className = `toast-msg ${type}`;
+  el.innerHTML = `<i class="bi ${icon}" style="color:${color}"></i><span>${msg}</span>`;
+  document.getElementById('toastContainer').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+/* ── Chat ───────────────────────────────────────────────────────────────── */
+const chatMessages = document.getElementById('chatMessages');
+const chatInput    = document.getElementById('chatInput');
+const sendBtn      = document.getElementById('sendBtn');
+
+// Auto-resize textarea
+chatInput.addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+});
+
+chatInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+
+function appendBubble(role, text) {
+  const div = document.createElement('div');
+  div.className = `chat-bubble ${role === 'user' ? 'user' : 'bot'}`;
+  if (role === 'bot') {
+    div.innerHTML = `<div class="bubble-sender">🥦 NutriBot</div>${escapeHtml(text)}`;
+  } else {
+    div.textContent = text;
+  }
+  chatMessages.appendChild(div);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  return div;
+}
+
+function appendTyping() {
+  const div = document.createElement('div');
+  div.className = 'typing-indicator';
+  div.id = 'typingDot';
+  div.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+  chatMessages.appendChild(div);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function removeTyping() {
+  const el = document.getElementById('typingDot');
+  if (el) el.remove();
+}
+
+async function sendMessage() {
+  const text = chatInput.value.trim();
+  if (!text || sendBtn.disabled) return;
+
+  chatInput.value = '';
+  chatInput.style.height = 'auto';
+  sendBtn.disabled = true;
+
+  appendBubble('user', text);
+  chatHistory.push({ role: 'user', content: text });
+  appendTyping();
+
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text, history: chatHistory.slice(-10), context: userProfile }),
+    });
+    const data = await res.json();
+    removeTyping();
+    if (data.error) {
+      const b = appendBubble('bot', '⚠️ ' + data.error);
+      b.classList.add('error');
+    } else {
+      appendBubble('bot', data.reply);
+      chatHistory.push({ role: 'assistant', content: data.reply });
+    }
+  } catch (err) {
+    removeTyping();
+    const b = appendBubble('bot', '⚠️ Network error. Please try again.');
+    b.classList.add('error');
+  }
+  sendBtn.disabled = false;
+  chatInput.focus();
+}
+
+function sendQuick(el) { chatInput.value = el.textContent; sendMessage(); }
+
+/* ── Nutrition Plan ─────────────────────────────────────────────────────── */
+async function generateNutritionPlan() {
+  const btn = document.getElementById('np-btn');
+  const box = document.getElementById('np-result');
+  setLoading(btn, box, 'Generating your 7-day plan…');
+
+  const profile = {
+    name      : v('np-name') || userProfile.name,
+    age       : v('np-age') || userProfile.age,
+    weight    : v('np-weight') || userProfile.weight,
+    height    : v('np-height') || userProfile.height,
+    goal      : v('np-goal'),
+    diet      : v('np-diet'),
+    conditions: v('np-conditions') || userProfile.conditions,
+    allergies : v('np-allergies') || userProfile.allergies,
+  };
+
+  try {
+    const res  = await fetch('/api/nutrition-plan', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ profile }),
+    });
+    const data = await res.json();
+    clearLoading(btn);
+    if (data.error) { box.textContent = '⚠️ ' + data.error; return; }
+    box.textContent = data.plan;
+    document.getElementById('np-actions').style.display = 'flex';
+    showToast('7-day nutrition plan ready!');
+  } catch(e) { clearLoading(btn); box.textContent = '⚠️ Request failed.'; }
+}
+
+/* ── Calorie Analyser ───────────────────────────────────────────────────── */
+async function analyseCalories() {
+  const btn = document.getElementById('ca-btn');
+  const box = document.getElementById('ca-result');
+  const foods = v('ca-foods');
+  if (!foods) { showToast('Please enter food items.', 'error'); return; }
+
+  setLoading(btn, box, 'Analysing nutrition…');
+  try {
+    const res  = await fetch('/api/calorie-analysis', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ foods }),
+    });
+    const data = await res.json();
+    clearLoading(btn);
+    box.textContent = data.error ? '⚠️ ' + data.error : data.analysis;
+    if (!data.error) showToast('Analysis complete!');
+  } catch(e) { clearLoading(btn); box.textContent = '⚠️ Request failed.'; }
+}
+
+function setFoodExample(el) {
+  document.getElementById('ca-foods').value = el.textContent;
+}
+
+/* ── BMI & TDEE ─────────────────────────────────────────────────────────── */
+async function calculateBMITDEE() {
+  const weight   = parseFloat(v('bmi-weight'));
+  const height   = parseFloat(v('bmi-height'));
+  const age      = parseInt(v('bmi-age'));
+  const gender   = v('bmi-gender');
+  const activity = v('bmi-activity');
+
+  if (!weight || !height) { showToast('Enter weight and height.', 'error'); return; }
+
+  try {
+    const [bmiRes, tdeeRes] = await Promise.all([
+      fetch('/api/bmi', { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ weight, height }) }).then(r => r.json()),
+      age ? fetch('/api/tdee', { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ weight, height, age, gender, activity }) }).then(r => r.json())
+        : Promise.resolve(null),
+    ]);
+
+    // BMI display
+    document.getElementById('bmi-value').textContent    = bmiRes.bmi;
+    document.getElementById('bmi-category').textContent = bmiRes.category;
+    document.getElementById('bmi-advice').textContent   = bmiRes.advice;
+
+    // Needle position: BMI 10→40 maps to 0%→100%
+    const pct = Math.min(100, Math.max(0, ((bmiRes.bmi - 10) / 30) * 100));
+    document.getElementById('bmi-needle').style.left = pct + '%';
+
+    // Dashboard card
+    document.getElementById('dash-bmi').textContent = bmiRes.bmi;
+
+    // TDEE
+    if (tdeeRes && !tdeeRes.error) {
+      document.getElementById('tdee-maintain').textContent = tdeeRes.tdee + ' kcal';
+      document.getElementById('tdee-loss').textContent     = tdeeRes.weight_loss + ' kcal';
+      document.getElementById('tdee-gain').textContent     = tdeeRes.weight_gain + ' kcal';
+      document.getElementById('dash-calories').textContent = tdeeRes.tdee;
+    }
+    showToast('BMI calculated!');
+  } catch(e) { showToast('Calculation failed.', 'error'); }
+}
+
+/* ── Meal Ideas ─────────────────────────────────────────────────────────── */
+async function getMealIdeas() {
+  const btn = document.getElementById('mi-btn');
+  const box = document.getElementById('mi-result');
+  setLoading(btn, box, 'Fetching meal ideas…');
+
+  const payload = {
+    meal_type   : v('mi-type'),
+    ingredients : v('mi-ingredients'),
+    preferences : v('mi-prefs'),
+  };
+  try {
+    const res  = await fetch('/api/meal-suggestions', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    clearLoading(btn);
+    box.textContent = data.error ? '⚠️ ' + data.error : data.suggestions;
+    if (!data.error) showToast('Meal ideas ready!');
+  } catch(e) { clearLoading(btn); box.textContent = '⚠️ Request failed.'; }
+}
+
+/* ── Family Plan ────────────────────────────────────────────────────────── */
+function addMember() {
+  const name = v('fm-name');
+  if (!name) { showToast('Enter a member name.', 'error'); return; }
+  familyMembers.push({
+    name      : name,
+    age       : v('fm-age') || '?',
+    goal      : v('fm-goal'),
+    conditions: v('fm-conditions') || 'none',
+  });
+  renderMembers();
+  ['fm-name','fm-age','fm-conditions'].forEach(id => document.getElementById(id).value = '');
+  showToast(`${name} added!`);
+}
+
+function renderMembers() {
+  const list = document.getElementById('membersList');
+  list.innerHTML = familyMembers.map((m, i) => `
+    <div class="member-card">
+      <div class="member-avatar">${m.name[0].toUpperCase()}</div>
+      <div class="member-info">
+        <div class="member-name">${escapeHtml(m.name)}</div>
+        <div class="member-meta">Age ${m.age} · ${m.goal}</div>
+      </div>
+      <button class="btn-icon" onclick="removeMember(${i})" title="Remove"><i class="bi bi-trash" style="color:var(--danger)"></i></button>
+    </div>`).join('');
+}
+
+function removeMember(i) {
+  familyMembers.splice(i, 1);
+  renderMembers();
+}
+
+async function generateFamilyPlan() {
+  if (familyMembers.length === 0) { showToast('Add at least one family member.', 'error'); return; }
+  const btn = document.getElementById('fam-btn');
+  const box = document.getElementById('fam-result');
+  setLoading(btn, box, 'Building family plan…');
+
+  try {
+    const res  = await fetch('/api/family-plan', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ members: familyMembers }),
+    });
+    const data = await res.json();
+    clearLoading(btn);
+    box.textContent = data.error ? '⚠️ ' + data.error : data.plan;
+    if (!data.error) showToast('Family plan generated!');
+  } catch(e) { clearLoading(btn); box.textContent = '⚠️ Request failed.'; }
+}
+
+/* ── Profile ────────────────────────────────────────────────────────────── */
+function saveProfile() {
+  userProfile = {
+    name      : v('prof-name'),
+    age       : v('prof-age'),
+    weight    : v('prof-weight'),
+    height    : v('prof-height'),
+    gender    : v('prof-gender'),
+    goal      : v('prof-goal'),
+    conditions: v('prof-conditions'),
+    allergies : v('prof-allergies'),
+  };
+  localStorage.setItem('nutribot_profile', JSON.stringify(userProfile));
+  renderProfileSummary();
+  updateDashboard();
+  showToast('Profile saved!');
+}
+
+function renderProfileSummary() {
+  const p = userProfile;
+  if (!p.name) return;
+  const bmi = (p.weight && p.height)
+    ? (p.weight / ((p.height/100)**2)).toFixed(1) : '—';
+  document.getElementById('profileSummary').innerHTML = `
+    <div class="d-flex align-items-center gap-3 mb-3">
+      <div class="member-avatar" style="width:56px;height:56px;font-size:1.4rem">${p.name[0].toUpperCase()}</div>
+      <div><div style="font-weight:700;font-size:1.05rem">${escapeHtml(p.name)}</div>
+           <div style="font-size:0.8rem;color:var(--text-muted)">${p.age ? p.age+' yrs' : ''} · ${p.gender||''}</div></div>
+    </div>
+    <table style="width:100%;font-size:0.85rem;border-collapse:collapse">
+      ${row('Weight', p.weight ? p.weight+' kg' : '—')}
+      ${row('Height', p.height ? p.height+' cm' : '—')}
+      ${row('BMI', bmi)}
+      ${row('Goal', p.goal||'—')}
+      ${row('Conditions', p.conditions||'None')}
+      ${row('Allergies', p.allergies||'None')}
+    </table>`;
+}
+
+function row(k, v) {
+  return `<tr>
+    <td style="padding:5px 0;color:var(--text-muted);width:40%">${k}</td>
+    <td style="padding:5px 0;font-weight:500">${escapeHtml(String(v))}</td>
+  </tr>`;
+}
+
+function loadProfileForm() {
+  const p = userProfile;
+  ['name','age','weight','height','conditions','allergies'].forEach(k => {
+    const el = document.getElementById('prof-'+k);
+    if (el && p[k]) el.value = p[k];
+  });
+  ['gender','goal'].forEach(k => {
+    const el = document.getElementById('prof-'+k);
+    if (el && p[k]) el.value = p[k];
+  });
+  renderProfileSummary();
+}
+
+function updateDashboard() {
+  if (userProfile.goal) document.getElementById('dash-goal').textContent = userProfile.goal;
+}
+
+/* ── Utilities ──────────────────────────────────────────────────────────── */
+function v(id) { return (document.getElementById(id)||{}).value||''; }
+function escapeHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function setLoading(btn, box, msg) {
+  btn.disabled = true;
+  btn.dataset.orig = btn.innerHTML;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Working…';
+  box.className = 'result-box loading';
+  box.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>${msg}`;
+}
+
+function clearLoading(btn) {
+  btn.disabled = false;
+  btn.innerHTML = btn.dataset.orig || btn.innerHTML;
+  document.querySelectorAll('.result-box.loading').forEach(b => b.classList.remove('loading'));
+}
+
+function copyResult(id) {
+  navigator.clipboard.writeText(document.getElementById(id).textContent)
+    .then(() => showToast('Copied to clipboard!'))
+    .catch(() => showToast('Copy failed.', 'error'));
+}
+
+function askFollowUp(id) {
+  const txt = document.getElementById(id).textContent.slice(0, 300);
+  chatInput.value = `Regarding this plan: ${txt}…`;
+  navigate('chat');
+}
+
+/* ── Init ───────────────────────────────────────────────────────────────── */
+loadProfileForm();
+updateDashboard();
+</script>
+</body>
+</html>

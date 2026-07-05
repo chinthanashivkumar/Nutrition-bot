@@ -1,0 +1,19 @@
+# ── Core web framework ─────────────────────────────────────────────────────────
+flask>=3.0.0
+flask-cors>=4.0.0
+
+# ── IBM Watsonx.ai SDK ─────────────────────────────────────────────────────────
+ibm-watsonx-ai>=1.1.2
+
+# ── Environment / config ───────────────────────────────────────────────────────
+python-dotenv>=1.0.0
+
+# ── Utility ────────────────────────────────────────────────────────────────────
+requests>=2.31.0
+
+# ── Production WSGI server (optional — use instead of Flask dev server) ────────
+gunicorn>=21.2.0
+
+# ── Development / testing ──────────────────────────────────────────────────────
+pytest>=7.4.0
+pytest-flask>=1.3.0
