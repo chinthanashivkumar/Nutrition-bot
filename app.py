@@ -88,10 +88,11 @@ if _ENV_PATH.exists():
     load_dotenv(dotenv_path=_ENV_PATH, override=True)
     print(f"[env] Loaded: {_ENV_PATH}")
 elif _ENV_EXAMPLE_PATH.exists():
-    load_dotenv(dotenv_path=_ENV_EXAMPLE_PATH, override=True)
-    print(f"[env] WARNING: .env not found — loaded from .env.example instead")
+    # override=False so real environment variables (e.g. from Render) take priority
+    load_dotenv(dotenv_path=_ENV_EXAMPLE_PATH, override=False)
+    print(f"[env] WARNING: .env not found — loaded from .env.example instead (env vars take priority)")
 else:
-    print("[env] ERROR: Neither .env nor .env.example found!")
+    print("[env] No .env file found — using environment variables only")
 
 # Startup credential check — fail fast with a clear message
 _missing = [v for v in ("IBM_CLOUD_API_KEY", "WATSONX_PROJECT_ID") if not os.getenv(v)]
