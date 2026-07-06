@@ -4,7 +4,7 @@ An intelligent nutrition assistant built with **Python Flask** and **IBM Watsonx
 Features a rich, responsive chat UI, 7-day meal planner, calorie analyser, BMI/TDEE calculator, family diet plans, and Indian food support — all customisable through a single `AGENT_INSTRUCTIONS` block in `app.py`.
 
 ## 🌐 Live Demo
-**[https://nutrition-bot.onrender.com](https://nutrition-bot.onrender.com)**
+**[https://nutrition-bot-t22u.onrender.com](https://nutrition-bot-t22u.onrender.com)**
 
 > ⏳ First load may take 30–50 seconds (free tier cold start). Refresh if needed.
 
